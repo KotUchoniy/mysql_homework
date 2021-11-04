@@ -12,7 +12,7 @@ ansible-playbook main.yml
 #### Проверка;
 Для проверки работы зайти браузером по адресу http://192.168.7.151 или  http://192.168.7.152
 
-![alt text](https://github.com/KotUchoniy/mysql_homework/blob/main/MySQL.jpg?raw=true)
+![alt text](https://github.com/KotUchoniy/mysql_homework/blob/main/MySQL1.jpg?raw=true)
 
 
 ##### Комментарии:
