@@ -1,0 +1,115 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+compatibility_mode="2.7"
+MACHINES = {
+  :backend1 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.141', adapter: 3, netmask: "255.255.255.0"},
+                ],
+  },
+  :backend2 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.142', adapter: 3, netmask: "255.255.255.0"},
+                ],
+  },
+  :backend3 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.143', adapter: 3, netmask: "255.255.255.0"},
+                ],
+  },
+  :nginx1 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.151', adapter: 3, netmask: "255.255.255.0"},
+                ],
+  },
+  :nginx2 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.152', adapter: 3, netmask: "255.255.255.0"},
+                ],
+  },
+  :dbms1 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.161', adapter: 3, netmask: "255.255.255.0"},
+                ],
+        :node_mode => "master",
+  },
+  :dbms2 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.162', adapter: 3, netmask: "255.255.255.0"},
+                ],
+        :node_mode => "slave",
+  },
+  :dbms3 => {
+        :box_name => "centos/7",
+	:net => [
+                 {ip: '192.168.7.163', adapter: 3, netmask: "255.255.255.0"},
+                ],
+        :node_mode => "slave",
+  },
+  :"dbms-shell" => {
+        :box_name => "centos/7",
+        :net => [
+                 {ip: '192.168.7.171', adapter: 3, netmask: "255.255.255.0"},
+#                 {ip: '10.11.12.14', adapter: 2, netmask: "255.255.255.0"},
+                    ],
+  },
+  :"dbms-router" => {
+            :box_name => "centos/7",
+            :net => [
+                     {ip: '192.168.7.172', adapter: 3, netmask: "255.255.255.0"},
+#                     {ip: '10.11.12.10', adapter: 2, netmask: "255.255.255.0"},
+                    ],
+    },
+}
+
+hosts_file="127.0.0.1\tlocalhost\n"
+MACHINES.each do |hostname,config|  
+  config[:net].each do |ip|
+  end
+end
+
+Vagrant.configure("2") do |config|
+  MACHINES.each do |boxname, boxconfig|
+    config.vm.define boxname do |box|
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        if boxconfig.key?(:forwarded_port)
+          boxconfig[:forwarded_port].each do |port|
+            box.vm.network "forwarded_port", port
+          end
+        end
+        box.vm.provider "virtualbox" do |v|
+          v.memory = 256
+        end
+        box.vm.provision "shell" do |shell|
+          shell.inline = 'echo -e "$1" > /etc/hosts'
+          shell.args = [hosts_file]
+        end
+#        box.vm.provision "ansible" do |ansible|
+#          ansible.verbose = "v"
+#          ansible.playbook = "ansible/playbook.yml"
+#          ansible.tags = "all"
+#          ansible.extra_vars = {
+#            "mysql_root_password" => "_SecretPass1",
+#            "mysql_admin_username" => "admin",
+#            "mysql_admin_password" => "_AdminPassword2",
+#            "cluster_name" => "clInnoDB"
+#          }
+#          if boxname.to_s =~ /node\d/
+#            var_host = {"var_host" => "node1"}
+#            ansible.extra_vars[:var_host]=boxname.to_s
+#          end
+#        end
+    end
+  end
+end

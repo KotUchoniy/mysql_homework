@@ -1,0 +1,72 @@
+---
+- hosts: all
+  tasks:
+  - name: Include dbms vars
+    tags: ccl
+    include_vars: dbms_vars.yaml
+
+- hosts: dbms
+  tags: database
+  become: true
+  roles:
+    - role: dbms
+
+
+
+- hosts: backend
+  tags: php-fpm
+  become: true
+  roles:
+    - role: backend
+
+# Creating cluster
+- hosts: dbms-shell
+  tags: ccl
+  gather_facts: no
+  become: yes
+  tasks:
+   - name: "Creating cluster"
+     shell: mysqlsh  --password="{{ mysql_admin_password }}" -e "dba.createCluster('{{ cluster_name }}');" --uri '{{ mysql_admin_username }}@dbms1'
+
+   - name: "Adding dbms2"
+     shell: echo -e "{{ mysql_admin_password }}\nN\n{{ mysql_admin_password }}\n\n\n\nC\n" | mysqlsh --uri {{ mysql_admin_username }}@dbms1 --js -e "dba.getCluster().addInstance('admin@dbms2');" --passwords-from-stdin
+
+   - name: "Adding dbms3"
+     shell: echo -e "{{ mysql_admin_password }}\nN\n{{ mysql_admin_password }}\n\n\n\nC\n" | mysqlsh --uri {{ mysql_admin_username }}@dbms1 --js -e "dba.getCluster().addInstance('admin@dbms3');" --passwords-from-stdin
+
+# Starting mysql-router
+- hosts: dbms-router
+  gather_facts: no
+  become: yes
+  tasks:
+   - name: Bootstrap router
+     shell: echo -e "{{ mysql_admin_password }}\n" | mysqlrouter --bootstrap {{ mysql_admin_username }}@192.168.7.161 --user=mysqlrouter
+   - name: Enabling and starting router
+     service: 
+       name: mysqlrouter
+       state: "restarted"
+       enabled: yes
+
+- hosts: nginx
+  tags: nginx
+  become: true
+  roles:
+    - role: nginx
+
+- hosts: nginx1
+  tags: nginx1
+  gather_facts: no
+  become: true
+  tasks:
+    - name: Configuring keppalive Master
+      lineinfile: dest=/etc/keepalived/keepalived.conf
+                  regexp='state BACKUP'
+                  line='    state MASTER'
+                  state=present
+    - name: Restart keepalived
+      service: 
+        name: keepalived
+        state: restarted
+    - name: Create database
+      shell: curl http:localhost/createdb.php
+

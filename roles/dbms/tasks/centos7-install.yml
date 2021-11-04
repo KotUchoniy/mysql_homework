@@ -1,0 +1,23 @@
+---
+- name: check os version
+  fail: msg='OS is NOT CentOS 7.x'
+  when: ansible_distribution != 'CentOS' or ansible_distribution_major_version != '7'
+
+- name: Install the release mysql from a remote repo
+  become: true
+  yum:
+    name: https://repo.mysql.com/mysql80-community-release-el7-1.noarch.rpm
+    state: present
+
+- name: install the mysql packages
+  become: true
+  yum:
+    state: present
+    name:
+      - mysql-router-community
+      - mysql-community-server
+      - mysql-shell
+      - mysql-router-community
+      - mysql-community-libs-compat
+
+

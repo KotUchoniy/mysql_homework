@@ -1,0 +1,4 @@
+mysql_root_password: "_SecretPass1"
+mysql_admin_username: "admin"
+mysql_admin_password: 'StudentOtus_123'
+cluster_name: "otusInnoDB"
