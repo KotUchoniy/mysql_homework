@@ -32,12 +32,10 @@
 
 - name: Copy index.php
   template:
-    src: "{{ item }}"
-    dest: /var/www/
+    src: index.php.j2
+    dest: /var/www/index.php
     owner: apache
     mode: 0600
-  with_items:
-    - index.php.j2
 
 - name: Copy php files
   copy:
